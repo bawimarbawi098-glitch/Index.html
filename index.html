@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>App Vault - Penyimpan Tools</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 16px;
+      min-height: 100vh;
+    }
+    .container { max-width: 600px; margin: 0 auto; }
+    h1 { font-size: 1.5rem; text-align: center; margin-bottom: 20px; color: #38bdf8; }
+    .card {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      border: 1px solid #334155;
+    }
+    .card h2 { font-size: 1.1rem; margin-bottom: 12px; color: #94a3b8; }
+    .form-group { margin-bottom: 12px; }
+    label { display: block; font-size: 0.85rem; margin-bottom: 4px; color: #cbd5e1; }
+    input[type="text"], input[type="url"], textarea {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      background: #0f172a;
+      border: 1px solid #475569;
+      color: #fff;
+      font-size: 0.9rem;
+    }
+    .file-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+    .btn {
+      background: #0284c7;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      width: 100%;
+      font-size: 0.95rem;
+    }
+    .btn:active { background: #0369a1; }
+    .btn-secondary {
+      background: #334155;
+      color: #e2e8f0;
+      width: auto;
+      padding: 8px 12px;
+      font-size: 0.85rem;
+    }
+    .btn-danger { background: #e11d48; width: auto; padding: 6px 10px; font-size: 0.8rem; }
+    .hidden { display: none; }
+    .preview-container { margin-top: 10px; display: flex; align-items: center; gap: 10px; }
+    .preview-img { width: 50px; height: 50px; border-radius: 10px; object-fit: cover; border: 1px solid #64748b; }
+    .tools-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
+    .tool-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+    .tool-icon { width: 55px; height: 55px; border-radius: 12px; object-fit: cover; margin-bottom: 8px; background: #0f172a; }
+    .tool-name { font-weight: bold; font-size: 0.9rem; margin-bottom: 4px; color: #f8fafc; word-break: break-word; }
+    .tool-desc { font-size: 0.75rem; color: #94a3b8; margin-bottom: 10px; flex-grow: 1; word-break: break-word; }
+    .tool-actions { display: flex; gap: 6px; width: 100%; justify-content: center; }
+    .tool-actions a {
+      text-decoration: none;
+      background: #0284c7;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+    .btn-delete-card {
+      background: #334155;
+      color: #f87171;
+      border: none;
+      border-radius: 6px;
+      padding: 5px 8px;
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #10b981;
+      color: white;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      display: none;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      z-index: 99;
+    }
+    .backup-actions { display: flex; gap: 10px; }
+    .backup-actions button { flex: 1; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>App Vault 🗄️</h1>
+
+    <!-- Form Tambah Tool -->
+    <div class="card">
+      <h2>+ Tambah Tool Baru</h2>
+      <div class="form-group">
+        <label>Nama Tool/Aplikasi</label>
+        <input type="text" id="toolName" placeholder="Contoh: Canva, ChatGPT, dll">
+      </div>
+      <div class="form-group">
+        <label>Link URL</label>
+        <input type="url" id="toolUrl" placeholder="https://...">
+      </div>
+      <div class="form-group">
+        <label>Keterangan Singkat</label>
+        <input type="text" id="toolDesc" placeholder="Fungsi tool ini...">
+      </div>
+      <div class="form-group">
+        <label>Ikon / Foto</label>
+        <div class="file-row">
+          <input type="file" id="iconFileInput" accept="image/*">
+          <span id="photoStatusText" style="font-size: 0.8rem; color: #94a3b8;">Belum ada file</span>
+        </div>
+        <div id="imagePreviewContainer" class="preview-container hidden">
+          <img id="iconPreviewImg" class="preview-img" src="" alt="Pratinjau">
+          <button id="btnRemoveImage" type="button" class="btn btn-danger">Hapus Foto</button>
+        </div>
+        <input type="hidden" id="customIconData">
+      </div>
+      <button id="btnAddTool" type="button" class="btn">Simpan Tool</button>
+    </div>
+
+    <!-- Cadangan Data -->
+    <div class="card">
+      <h2>Cadangan & Pemulihan</h2>
+      <div class="backup-actions">
+        <button id="btnExport" type="button" class="btn btn-secondary">Ekspor Data (.json)</button>
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('importFileInput').click()">Impor Data</button>
+      </div>
+      <input type="file" id="importFileInput" accept=".json" class="hidden">
+    </div>
+
+    <!-- Daftar Tool yang Tersimpan -->
+    <h2 style="font-size: 1.1rem; margin-bottom: 12px; color: #94a3b8;">Koleksi Tools Saya</h2>
+    <div id="toolsList" class="tools-grid"></div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    var appsData = JSON.parse(localStorage.getItem('appvault_data')) || [];
+
+    function showToast(message) {
+      var toast = document.getElementById('toast');
+      toast.innerText = message;
+      toast.style.display = 'block';
+      setTimeout(function() { toast.style.display = 'none'; }, 3000);
+    }
+
+    function saveToStorage() {
+      localStorage.setItem('appvault_data', JSON.stringify(appsData));
+    }
+
+    function removePickedImage() {
+      document.getElementById('iconFileInput').value = '';
+      document.getElementById('customIconData').value = '';
+      document.getElementById('iconPreviewImg').src = '';
+      document.getElementById('imagePreviewContainer').classList.add('hidden');
+      document.getElementById('photoStatusText').innerText = 'Belum ada file';
+    }
+
+    function renderApps() {
+      var container = document.getElementById('toolsList');
+      container.innerHTML = '';
+
+      if (appsData.length === 0) {
+        container.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #64748b; font-size: 0.9rem;">Belum ada tool tersimpan.</p>';
+        return;
+      }
+
+      appsData.forEach(function(item, index) {
+        var card = document.createElement('div');
+        card.className = 'tool-card';
+
+        var imgTag = item.icon 
+          ? '<img src="' + item.icon + '" class="tool-icon" alt="icon">' 
+          : '<div class="tool-icon" style="display:flex;align-items:center;justify-content:center;font-size:1.5rem;">📁</div>';
+
+        card.innerHTML = 
+          imgTag +
+          '<div class="tool-name">' + (item.name || 'Tanpa Nama') + '</div>' +
+          '<div class="tool-desc">' + (item.desc || '-') + '</div>' +
+          '<div class="tool-actions">' +
+            '<a href="' + (item.url || '#') + '" target="_blank" rel="noopener">Buka</a>' +
+            '<button class="btn-delete-card" onclick="deleteTool(' + index + ')">Hapus</button>' +
+          '</div>';
+
+        container.appendChild(card);
+      });
+    }
+
+    function deleteTool(index) {
+      if (confirm('Hapus tool ini?')) {
+        appsData.splice(index, 1);
+        saveToStorage();
+        renderApps();
+        showToast('Tool berhasil dihapus');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      // 1. Logika Input & Kompres Gambar
+      document.getElementById('iconFileInput').onchange = function(event) {
+        var file = event.target.files[0];
+        if (!file) return;
+
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          var img = new Image();
+          img.onload = function() {
+            var canvas = document.createElement('canvas');
+            var maxDim = 300;
+            var w = img.width;
+            var h = img.height;
+            if (w > h && w > maxDim) { h = Math.round((h * maxDim) / w); w = maxDim; }
+            else if (h > maxDim) { h = Math.round((h * maxDim) / h); h = maxDim; }
+
+            canvas.width = w;
+            canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+
+            var base64 = canvas.toDataURL('image/jpeg', 0.8);
+            document.getElementById('customIconData').value = base64;
+            document.getElementById('iconPreviewImg').src = base64;
+            document.getElementById('imagePreviewContainer').classList.remove('hidden');
+            document.getElementById('photoStatusText').innerText = 'Foto Dipilih ✓';
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      };
+
+      document.getElementById('btnRemoveImage').onclick = removePickedImage;
+
+      // 2. Logika Simpan Tool Baru
+      document.getElementById('btnAddTool').onclick = function() {
+        var name = document.getElementById('toolName').value.trim();
+        var url = document.getElementById('toolUrl').value.trim();
+        var desc = document.getElementById('toolDesc').value.trim();
+        var icon = document.getElementById('customIconData').value;
+
+        if (!name) {
+          alert('Mohon isi nama tool/aplikasi!');
+          return;
+        }
+
+        appsData.push({
+          name: name,
+          url: url,
+          desc: desc,
+          icon: icon
+        });
+
+        saveToStorage();
+        renderApps();
+        showToast('Tool berhasil ditambahkan!');
+
+        // Reset form input
+        document.getElementById('toolName').value = '';
+        document.getElementById('toolUrl').value = '';
+        document.getElementById('toolDesc').value = '';
+        removePickedImage();
+      };
+
+      // 3. Ekspor Data Backup JSON
+      document.getElementById('btnExport').onclick = function() {
+        var blob = new Blob([JSON.stringify(appsData, null, 2)], { type: 'application/json' });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'appvault-backup.json';
+        a.click();
+      };
+
+      // 4. Impor Data Backup JSON
+      document.getElementById('importFileInput').onchange = function(e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        var r = new FileReader();
+        r.onload = function(ev) {
+          try {
+            appsData = JSON.parse(ev.target.result);
+            saveToStorage();
+            renderApps();
+            showToast('Data berhasil dipulihkan!');
+          } catch(err) {
+            showToast('Gagal membaca file');
+          }
+        };
+        r.readAsText(file);
+      };
+
+      // Render pertama kali saat halaman dibuka
+      renderApps();
+    });
+  </script>
+</body>
+</html>
